@@ -14,18 +14,26 @@ cost, discount, sale_amount_recovered, and the target columns listed in POLICIES
 import argparse
 from pathlib import Path
 
+import matplotlib
+import numpy as np
 import pandas as pd
 
 import retail_configs
-from simulator import DEMAND_COL, compare_policies, run_policy
+from simulator import DEMAND_COL, compare_policies, run_policy, summarise
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
 
 # policy name -> column holding the order-up-to target for each item-day
 POLICIES = {
     "naive (7-day mean)": "mean_7",
+    "naive (mean + k*std)": "naive_k",
     "LightGBM": "q_lgbm",
     "LightGBM + conformal": "q_lgbm_conf",
     "perfect foresight": DEMAND_COL,
 }
+
+K_GRID = np.arange(-1.0, 3.01, 0.25)  # safety-stock multipliers tried for the simple rule
 
 FIFO_SHARES = [1.0, 0.7, 0.5]  # share of customers taking the oldest units first
 BASE_FIFO_SHARE = 0.7
@@ -44,9 +52,34 @@ def add_category_names(results):
     return results
 
 
-def load_predictions(path):
+def k_target(df, k):
+    """Order-up-to level: 7-day mean plus k recent standard deviations, never below 0."""
+    return (df["mean_7"] + k * df["std_7"].fillna(0)).clip(lower=0)
+
+
+def tune_k(train):
+    """Per category, the k with the highest simulated profit on training-period data.
+
+    Eval data is never used. Rows without a 7-day mean (start of each series) are dropped.
+    """
+    train = train.dropna(subset=["mean_7"])
+    profits = {}
+    for k in K_GRID:
+        sim = run_policy(train.assign(target=k_target(train, k)), "target",
+                         fifo_share=BASE_FIFO_SHARE)
+        profits[k] = summarise(sim)["profit"]
+    return pd.DataFrame(profits).idxmax(axis=1).to_dict()
+
+
+def load_predictions(path, tune_path):
     df = pd.read_parquet(path)
     df["dt"] = pd.to_datetime(df["dt"])
+    train = pd.read_parquet(tune_path)
+    train["dt"] = pd.to_datetime(train["dt"])
+    ks = tune_k(train)
+    print("Tuned k per category (training period):", ks)
+    k_per_row = df["first_category_id"].map(ks)
+    df["naive_k"] = (df["mean_7"] + k_per_row * df["std_7"].fillna(0)).clip(lower=0)
     missing = [col for col in POLICIES.values() if col not in df.columns]
     if missing:
         raise ValueError(f"Missing target columns in {path}: {missing}")
@@ -70,6 +103,24 @@ def picking_sensitivity(df):
     return results[["fifo_share"] + SUMMARY_COLS]
 
 
+def plot_tradeoff(results, path):
+    """Fill rate vs waste rate, one point per policy, one panel per category."""
+    shown = results[results["policy"] != "perfect foresight"]
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.8))
+    for ax, name in zip(axes, ["bread", "meat", "vegetables"]):
+        for i, (_, r) in enumerate(shown[shown["category"] == name].iterrows()):
+            ax.scatter(100 * r["waste_rate"], 100 * r["fill_rate"], s=60,
+                       color=f"C{i}", label=r["policy"])
+        ax.set_title(name)
+        ax.set_xlabel("waste (% of units ordered)")
+        ax.grid(alpha=0.3)
+    axes[0].set_ylabel("fill rate (% of demand served)")
+    axes[0].legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
 def example_trace(df, target_col="q_lgbm"):
     """Day-by-day simulation for the first store-product, for illustration."""
     detail = run_policy(df, target_col, fifo_share=BASE_FIFO_SHARE)
@@ -84,18 +135,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("predictions", help="parquet file with eval data and target columns")
+    parser.add_argument("--tune-data", default="data/train_small.parquet",
+                        help="training-period parquet used to pick k for the simple rule")
     parser.add_argument("--out", default="results", help="folder for the output CSV files")
     args = parser.parse_args()
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    df = load_predictions(args.predictions)
+    df = load_predictions(args.predictions, args.tune_data)
 
     with pd.option_context("display.width", 120, "display.max_columns", 20):
         results = main_comparison(df)
         results.to_csv(out / "policy_comparison.csv", index=False)
         print(f"\nPolicy comparison (fifo_share = {BASE_FIFO_SHARE})")
         print(results[SUMMARY_COLS].round(3).to_string(index=False))
+
+        plot_tradeoff(results, out / "tradeoff.png")
 
         sensitivity = picking_sensitivity(df)
         sensitivity.to_csv(out / "picking_sensitivity.csv", index=False)

@@ -91,6 +91,9 @@ Data preparation and modelling are in `notebooks/`; simulator logic in `src/simu
 ## Limitations and next steps
 - Demand on stockout days is an estimate; categories, prices and shelf lives are assumptions.
 - One test week plus a 5-week backtest; the simulation starts with empty shelves.
+- Policies sit at different service levels (fill rate vs waste), so a profit gap mixes forecast quality
+  with how aggressively each policy orders. Read `results/tradeoff.png` with that in mind; a full
+  sweep over service levels would separate the two.
 - Model choice kept deliberately simple; a hierarchical model (shared structure across stores and products) is a possible next step.
 - Next: compare one-day vs. carry-over τ, handle trends (relative targets, recency weighting),
   and add case packs and shared constraints, where a MILP starts to beat simple rules.
