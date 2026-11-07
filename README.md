@@ -112,3 +112,9 @@ https://arxiv.org/pdf/2210.12496
 https://arxiv.org/pdf/2507.23390
 https://www.lokad.com/blog/2026/2/27/when-you-think-you-need-an-inventory-forecast/
 https://arxiv.org/pdf/2210.03137
+
+
+## How this was built
+Developed with Claude (Anthropic) as a coding and thinking partner: Claude chat for learning
+the operations research background and discussing design choices, and Claude Code for
+implementation and refactoring. Problem framing, modelling decisions, data checks, preparation and interpretation of results are my own; I reviewed and can explain all code.
