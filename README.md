@@ -1,6 +1,6 @@
-# Freshflow inventory optimisation Simple demo
+# When is simple good enough? Ordering fresh food from quantile forecasts 
 
-A small demo that uses FreshRetailNet-50K stratified sample data, LightGBM quantile model for frecasting, and simulation with naive rules for decision making.
+A small demo for freshflow role that uses FreshRetailNet-50K stratified sample data, LightGBM quantile model for frecasting, and simulation with naive rules for decision making.
 
 
 ## Data
@@ -56,6 +56,11 @@ Coverage = share of days where demand ≤ predicted quantile (should equal τ).
 ### Simulation (test week, 70% oldest-first picking)
 Fill rate = sold / demand; waste rate = expired units / units ordered (source: `results/policy_comparison.csv`).
 Profit is shown as % of perfect foresight (orders exactly the true demand).
+
+![Fill rate vs waste per policy and category](results/tradeoff.png)
+
+Up and to the left is better (more demand served, less waste). Policies sit at different service levels,
+so compare points by their position on both axes, not just profit.
 
 | Category | Policy | Fill rate | Waste rate | Profit, % of perfect |
 |---|---|---|---|---|
