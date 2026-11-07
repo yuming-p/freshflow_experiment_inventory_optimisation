@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+
+# big data file
+data/train.parquet
+data/eval.parquet
+data/val.parquet
