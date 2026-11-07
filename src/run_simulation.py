@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
+import retail_configs
 from simulator import DEMAND_COL, compare_policies, run_policy
 
 # policy name -> column holding the order-up-to target for each item-day
@@ -33,12 +34,8 @@ SUMMARY_COLS = ["category", "policy", "fill_rate", "waste_rate", "profit_vs_perf
 
 
 def category_names():
-    """Map category IDs to names from retail_configs, if it is importable."""
-    try:
-        import retail_configs
-        return {c: cfg["category_name"] for c, cfg in retail_configs.CATEGORY_CONFIG.items()}
-    except ImportError:
-        return {}
+    """Map category IDs to names from retail_configs."""
+    return {c: cfg["category_name"] for c, cfg in retail_configs.CATEGORY_CONFIG.items()}
 
 
 def add_category_names(results):

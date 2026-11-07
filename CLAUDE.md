@@ -55,7 +55,7 @@ remaining under-coverage comes from trend, not miscalibration.
 - `run_simulation.py`: reads `data/eval_predictions.parquet` (eval set + target columns
   mean_7, q_lgbm, q_lgbm_conf), writes `results/*.csv`. Policies: naive 7-day mean, LightGBM,
   LightGBM + conformal, perfect foresight.
-- `tests/test_simulator.py`: hand-computed meat trace, bread, picking, rounding, unit conservation,
+- `test/test_simulator.py`: hand-computed meat trace, bread, picking, rounding, unit conservation,
   perfect foresight. Run `uv run pytest -v` (pytest config in pyproject.toml).
 
 

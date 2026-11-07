@@ -1,10 +1,7 @@
-# Fresh replenishment: does extra modelling pay off?
+# Freshflow inventory optimisation Simple demo
 
-A small demo of turning demand forecasts into ordering decisions for perishables,
-judged by what happens in a simulated store: waste, stockouts and profit.
+A small demo that uses FreshRetailNet-50K stratified sample data, LightGBM quantile model for frecasting, and simulation with naive rules for decision making.
 
-**Question:** does a calibration step on top of LightGBM quantile forecasts improve ordering,
-or is the simple model good enough?
 
 ## Data
 [FreshRetailNet-50K](https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K) (Dingdong, CC BY 4.0):
@@ -52,7 +49,9 @@ Coverage = share of days where demand ≤ predicted quantile (should equal τ).
 - Across a 5-week rolling backtest, the gain shrinks to about 1% or less: the test week had a demand
   jump that the calibration week happened to anticipate.
 - **Takeaway: plain LightGBM quantiles are nearly calibrated; the remaining gap comes from
-  demand trends, not miscalibration.**
+  demand trends, not miscalibration.** The simulation below does show conformal helping meat and vegetables
+  in the test week, but that week had an upward demand jump the shift happened to anticipate, so treat
+  the gain as indicative.
 
 ### Simulation (test week, 70% oldest-first picking)
 Fill rate = sold / demand; waste rate = expired units / units ordered (source: `results/policy_comparison.csv`).
@@ -85,20 +84,20 @@ Profit is shown as % of perfect foresight (orders exactly the true demand).
 ```bash
 uv sync
 uv run pytest -v                                              # simulator tests
-uv run python run_simulation.py data/eval_predictions.parquet --out results/
+uv run python src/run_simulation.py data/eval_predictions.parquet --out results/
 ```
 Data preparation and modelling are in `notebooks/`; simulator logic in `src/simulator.py`.
 
 ## Limitations and next steps
 - Demand on stockout days is an estimate; categories, prices and shelf lives are assumptions.
 - One test week plus a 5-week backtest; the simulation starts with empty shelves.
-- model selection: kept simpliest, wanted to explore hierarchical Bayesian model (JAX won't install on the author's 2017 Intel Mac).
+- Model choice kept deliberately simple; a hierarchical model (shared structure across stores and products) is a possible next step.
 - Next: compare one-day vs. carry-over τ, handle trends (relative targets, recency weighting),
   and add case packs and shared constraints, where a MILP starts to beat simple rules.
 
 
 
-### Resources:
+## Resources
 https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K
 https://www.kaggle.com/datasets/likithagedipudi/perishable-goods-management
 https://arxiv.org/pdf/2210.12496

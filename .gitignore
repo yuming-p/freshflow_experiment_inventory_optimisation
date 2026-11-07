@@ -14,3 +14,11 @@ wheels/
 data/train.parquet
 data/eval.parquet
 data/val.parquet
+# Large raw splits (regenerate with notebooks/prepare_data_freshnet_retail50k.ipynb)
+data/train.parquet
+data/val.parquet
+data/eval.parquet
+
+# Tooling
+.pytest_cache/
+.ipynb_checkpoints/
