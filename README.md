@@ -1,6 +1,6 @@
 # When is simple good enough? Ordering fresh food from quantile forecasts 
 
-A small demo for freshflow role that uses FreshRetailNet-50K stratified sample data, LightGBM quantile model for frecasting, and simulation with naive rules for decision making.
+A small demo of inventory management that uses FreshRetailNet-50K stratified sample data, LightGBM quantile model for forecasting, and simulation with naive rules for decision making.
 
 
 ## Data
